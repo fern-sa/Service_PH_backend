@@ -2,8 +2,24 @@
 
 class Users::RegistrationsController < Devise::RegistrationsController
   include RackSessionsFix
-  
   respond_to :json
+  before_action :authenticate_user!, only: [:destroy]
+
+  def destroy
+    user = current_user
+    
+    if current_user.is_admin? && params[:user][:id].present?
+      user = User.find_by(id: params[:user][:id])
+      return render json: { error: "User not found" }, status: :not_found unless user
+    end
+
+    if user == current_user || current_user.is_admin?
+      user.destroy
+      render json: { message: "User account deleted successfully." }, status: :ok
+    else
+      render json: { error: "Not authorized to delete this account." }, status: :forbidden
+    end
+  end
 
   private
 
