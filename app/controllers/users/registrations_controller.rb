@@ -2,10 +2,63 @@
 
 class Users::RegistrationsController < Devise::RegistrationsController
   include RackSessionsFix
-  
   respond_to :json
+  before_action :authenticate_user!, only: [:destroy, :update, :show]
+
+  def destroy
+    return () if check_if_admin() == nil
+    if @user.destroy
+      render json: { message: "User account deleted successfully." }, status: :ok
+    else
+      render json: { error: "Not authorized to delete this account." }, status: :unauthorized
+    end
+  end
+
+  def update
+    return () if check_if_admin() == nil
+    
+    if @user.update(user_update_params)
+      render json: { message: "User account updated",
+        user: {
+          id: @user.id,
+          email: @user.email,
+          avatar_url: @user.profile_picture.attached? ? url_for(@user.profile_picture) : nil
+      }}, status: :ok
+    else
+      render json: { error: "Error" }, status: :bad_request
+    end
+  end
+
+  def show
+    if params[:user][:id].present? 
+        @user = User.find_by(id: params[:user][:id])
+        render json: { error: "User not found" }, status: :not_found and return if @user == nil
+      else
+        @user = current_user
+    end
+    render json: {
+        status: {code: 200},
+        data: UserSerializer.new(@user).serializable_hash[:data][:attributes]
+      }
+  end
 
   private
+
+  def user_update_params
+    params.require(:user).permit(:email, :first_name, :last_name, :profile_picture)
+  end
+
+  def check_if_admin()
+    return @user = current_user if !params[:user][:id].present?
+    if current_user.is_admin? && params[:user][:id].present?
+      @user = User.find_by(id: params[:user][:id])
+      render json: { error: "User not found" }, status: :not_found and return if @user == nil
+      return @user
+    elsif !current_user.is_admin? && params[:user][:id].present?
+      render json: { error: "Not authorized"}, status: :unauthorized
+      return
+    end
+  end
 
   def respond_with(current_user, _opts = {})
     if resource.persisted?
