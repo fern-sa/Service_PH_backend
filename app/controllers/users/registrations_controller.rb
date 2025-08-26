@@ -3,7 +3,7 @@
 class Users::RegistrationsController < Devise::RegistrationsController
   include RackSessionsFix
   respond_to :json
-  before_action :authenticate_user!, only: [:destroy, :update]
+  before_action :authenticate_user!, only: [:destroy, :update, :show]
 
   def destroy
     return () if check_if_admin() == nil
@@ -15,14 +15,31 @@ class Users::RegistrationsController < Devise::RegistrationsController
   end
 
   def update
-    Rails.logger.debug "PARAMS: #{params.inspect}"
     return () if check_if_admin() == nil
     
     if @user.update(user_update_params)
-      render json: { message: "User account updated"}, status: :ok
+      render json: { message: "User account updated",
+        user: {
+          id: @user.id,
+          email: @user.email,
+          avatar_url: @user.profile_picture.attached? ? url_for(@user.profile_picture) : nil
+      }}, status: :ok
     else
       render json: { error: "Error" }, status: :bad_request
     end
+  end
+
+  def show
+    if params[:user][:id].present? 
+        @user = User.find_by(id: params[:user][:id])
+        render json: { error: "User not found" }, status: :not_found and return if @user == nil
+      else
+        @user = current_user
+    end
+    render json: {
+        status: {code: 200},
+        data: UserSerializer.new(@user).serializable_hash[:data][:attributes]
+      }
   end
 
   private
