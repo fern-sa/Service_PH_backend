@@ -50,11 +50,11 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   def check_if_admin()
     return @user = current_user if !params[:user][:id].present?
-    if current_user.is_admin? && params[:user][:id].present?
+    if current_user.admin? && params[:user][:id].present?
       @user = User.find_by(id: params[:user][:id])
       render json: { error: "User not found" }, status: :not_found and return if @user == nil
       return @user
-    elsif !current_user.is_admin? && params[:user][:id].present?
+    elsif !current_user.admin? && params[:user][:id].present?
       render json: { error: "Not authorized"}, status: :unauthorized
       return
     end
