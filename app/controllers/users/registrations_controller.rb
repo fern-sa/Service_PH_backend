@@ -3,7 +3,7 @@
 class Users::RegistrationsController < Devise::RegistrationsController
   include RackSessionsFix
   respond_to :json
-  before_action :authenticate_user!, only: [:destroy, :update, :show]
+  before_action :authenticate_user!, only: [:destroy, :update, :show, :index]
 
   def destroy
     return () if check_if_admin() == nil
@@ -12,6 +12,13 @@ class Users::RegistrationsController < Devise::RegistrationsController
     else
       render json: { error: "Not authorized to delete this account." }, status: :unauthorized
     end
+  end
+
+  def index
+    render json: { error: "Not authorized" }, status: :unauthorized and return if !current_user.admin?
+    @users = User.all
+    render json: UserSerializer.new(@users).serializable_hash, status: :ok
+    
   end
 
   def update
