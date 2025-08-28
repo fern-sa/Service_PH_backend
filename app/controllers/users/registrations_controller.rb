@@ -3,7 +3,7 @@
 class Users::RegistrationsController < Devise::RegistrationsController
   include RackSessionsFix
   respond_to :json
-  before_action :authenticate_user!, only: [:destroy, :update, :show]
+  before_action :authenticate_user!, only: [:destroy, :update, :show, :index]
 
   def destroy
     return () if check_if_admin() == nil
@@ -14,18 +14,23 @@ class Users::RegistrationsController < Devise::RegistrationsController
     end
   end
 
+  def index
+    render json: { error: "Not authorized" }, status: :unauthorized and return if !current_user.admin?
+    @users = User.all
+    render json: UserSerializer.new(@users).serializable_hash, status: :ok
+    
+  end
+
   def update
     return () if check_if_admin() == nil
-    
     if @user.update(user_update_params)
       render json: { message: "User account updated",
-        user: {
-          id: @user.id,
-          email: @user.email,
-          avatar_url: @user.profile_picture.attached? ? url_for(@user.profile_picture) : nil
-      }}, status: :ok
+        data: UserSerializer.new(@user).serializable_hash[:data][:attributes]
+      }, status: :ok
     else
-      render json: { error: "Error" }, status: :bad_request
+      render json: { error: "Error",
+        details: @user.errors.full_messages
+      }, status: :unprocessable_entity
     end
   end
 
@@ -45,16 +50,16 @@ class Users::RegistrationsController < Devise::RegistrationsController
   private
 
   def user_update_params
-    params.require(:user).permit(:email, :first_name, :last_name, :profile_picture)
+    params.require(:user).permit(:email, :first_name, :last_name, :profile_picture, :age, :longitude, :latitude, :location, :bio, :phone)
   end
 
   def check_if_admin()
     return @user = current_user if !params[:user][:id].present?
-    if current_user.is_admin? && params[:user][:id].present?
+    if current_user.admin? && params[:user][:id].present?
       @user = User.find_by(id: params[:user][:id])
       render json: { error: "User not found" }, status: :not_found and return if @user == nil
       return @user
-    elsif !current_user.is_admin? && params[:user][:id].present?
+    elsif !current_user.admin? && params[:user][:id].present?
       render json: { error: "Not authorized"}, status: :unauthorized
       return
     end
