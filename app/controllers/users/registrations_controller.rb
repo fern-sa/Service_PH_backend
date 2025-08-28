@@ -16,16 +16,14 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   def update
     return () if check_if_admin() == nil
-    
     if @user.update(user_update_params)
       render json: { message: "User account updated",
-        user: {
-          id: @user.id,
-          email: @user.email,
-          avatar_url: @user.profile_picture.attached? ? url_for(@user.profile_picture) : nil
-      }}, status: :ok
+        data: UserSerializer.new(@user).serializable_hash[:data][:attributes]
+      }, status: :ok
     else
-      render json: { error: "Error" }, status: :bad_request
+      render json: { error: "Error",
+        details: @user.errors.full_messages
+      }, status: :unprocessable_entity
     end
   end
 
@@ -45,7 +43,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
   private
 
   def user_update_params
-    params.require(:user).permit(:email, :first_name, :last_name, :profile_picture)
+    params.require(:user).permit(:email, :first_name, :last_name, :profile_picture, :age, :longitude, :latitude, :location, :bio, :phone)
   end
 
   def check_if_admin()

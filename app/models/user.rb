@@ -11,4 +11,5 @@ class User < ApplicationRecord
   has_one_attached :profile_picture
   enum user_type: { customer: 0, service_provider: 1, admin: 2 }
   validates :phone, format: { with: /\A09\d{9}\z/, message: "must be 11 digits and start with 09" }
+  validates :email, presence: true, uniqueness: {case_sensitive: false}
 end
