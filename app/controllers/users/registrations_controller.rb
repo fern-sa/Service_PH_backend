@@ -52,7 +52,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
     params.require(:user).permit(:email, :first_name, :last_name, :profile_picture, :age, :longitude, :latitude, :location, :bio, :phone)
   end
 
-  def check_if_admin_or_current_user()
+  def check_if_admin_or_current_user
     return @user = current_user if !params[:user][:id].present?
     if current_user.admin? && params[:user][:id].present?
       @user = User.find_by(id: params[:user][:id])
