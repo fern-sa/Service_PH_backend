@@ -40,13 +40,19 @@ class Users::RegistrationsController < Devise::RegistrationsController
       else
         @user = current_user
     end
+    serialize_and_santize
     render json: {
         status: {code: 200},
-        data: UserSerializer.new(@user).serializable_hash[:data][:attributes]
+        data: @user_serialized
       }
   end
 
   private
+
+  def serialize_and_santize
+    @user_serialized = UserSerializer.new(@user).serializable_hash[:data][:attributes]
+    @user_serialized = @user_serialized.except(:location, :longitude, :latitude, :age, :phone, :email, :sign_in_count) if !current_user.admin?
+  end
 
   def user_update_params
     params.require(:user).permit(:email, :first_name, :last_name, :profile_picture, :age, :longitude, :latitude, :location, :bio, :phone)
