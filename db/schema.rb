@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_08_27_093411) do
+ActiveRecord::Schema[7.2].define(version: 2025_08_29_191451) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -62,7 +62,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_27_093411) do
     t.string "first_name", null: false
     t.string "last_name", null: false
     t.string "jti", null: false
-    t.integer "user_type", default: 0, null: false
     t.string "location"
     t.decimal "longitude"
     t.decimal "latitude"
@@ -71,11 +70,21 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_27_093411) do
     t.integer "total_reviews", default: 0
     t.decimal "rating"
     t.text "bio"
+    t.string "city"
+    t.string "province"
+    t.integer "service_radius_km", default: 20
+    t.boolean "verified", default: false
+    t.boolean "active", default: true
+    t.string "user_type", default: "customer"
+    t.index ["active"], name: "index_users_on_active"
+    t.index ["city", "province"], name: "index_users_on_city_and_province"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["jti"], name: "index_users_on_jti", unique: true
     t.index ["phone"], name: "index_users_on_phone", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["user_type"], name: "index_users_on_user_type"
+    t.index ["verified"], name: "index_users_on_verified"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"

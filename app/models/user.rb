@@ -9,7 +9,37 @@ class User < ApplicationRecord
          :jwt_authenticatable, jwt_revocation_strategy: self
 
   has_one_attached :profile_picture
-  enum user_type: { customer: 0, service_provider: 1, admin: 2 }
-  validates :phone, format: { with: /\A09\d{9}\z/, message: "must be 11 digits and start with 09" }
-  validates :email, presence: true, uniqueness: {case_sensitive: false}
+  
+  enum user_type: { 
+    customer: 'customer', 
+    service_provider: 'service_provider', 
+    admin: 'admin' 
+  }
+
+  # Validations
+  validates :first_name, :last_name, presence: true, length: { minimum: 2 }
+  validates :phone, presence: true, uniqueness: true,
+            format: { with: /\A(\+63|0)[0-9]{10}\z/, message: "must be valid PH format" }
+  validates :email, presence: true, uniqueness: { case_sensitive: false }
+  validates :user_type, inclusion: { in: user_types.keys }
+  validates :service_radius_km, numericality: { greater_than: 0, less_than: 101 }, 
+            if: :service_provider?
+  validates :rating, numericality: { in: 0.0..5.0 }, allow_nil: true
+
+  # Scopes
+  scope :verified, -> { where(verified: true) }
+  scope :providers, -> { where(user_type: 'service_provider') }
+  scope :customers, -> { where(user_type: 'customer') }
+  scope :near_location, ->(lat, lng, radius = 20) {
+    where("ST_DWithin(ST_MakePoint(longitude, latitude), ST_MakePoint(?, ?), ?)", 
+          lng, lat, radius * 1000)
+  }
+
+  def full_name
+    "#{first_name} #{last_name}"
+  end
+
+  def can_provide_services?
+    service_provider? && active? && verified?
+  end
 end
