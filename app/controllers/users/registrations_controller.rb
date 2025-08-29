@@ -6,7 +6,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
   before_action :authenticate_user!, only: [:destroy, :update, :show, :index]
 
   def destroy
-    return () if check_if_admin() == nil
+    return if !check_if_admin_or_current_user
     if @user.destroy
       render json: { message: "User account deleted successfully." }, status: :ok
     else
@@ -18,11 +18,10 @@ class Users::RegistrationsController < Devise::RegistrationsController
     render json: { error: "Not authorized" }, status: :unauthorized and return if !current_user.admin?
     @users = User.all
     render json: UserSerializer.new(@users).serializable_hash, status: :ok
-    
   end
 
   def update
-    return () if check_if_admin() == nil
+    return if !check_if_admin_or_current_user
     if @user.update(user_update_params)
       render json: { message: "User account updated",
         data: UserSerializer.new(@user).serializable_hash[:data][:attributes]
@@ -53,7 +52,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
     params.require(:user).permit(:email, :first_name, :last_name, :profile_picture, :age, :longitude, :latitude, :location, :bio, :phone)
   end
 
-  def check_if_admin()
+  def check_if_admin_or_current_user
     return @user = current_user if !params[:user][:id].present?
     if current_user.admin? && params[:user][:id].present?
       @user = User.find_by(id: params[:user][:id])
