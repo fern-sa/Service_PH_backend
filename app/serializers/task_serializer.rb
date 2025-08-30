@@ -26,12 +26,30 @@ class TaskSerializer
     }
   end
 
-  # TODO: Add offer-related attributes when Offer model is created
-  # attribute :offers_count do |task|
-  #   task.offers.count
-  # end
+  attribute :offers_count do |task|
+    task.offers.count
+  end
   
-  # attribute :assigned_service_provider do |task|
-  #   task.assigned_service_provider&.full_name
-  # end
+  attribute :assigned_service_provider do |task|
+    if task.assigned_service_provider.present?
+      {
+        id: task.assigned_service_provider.id,
+        name: task.assigned_service_provider.full_name,
+        rating: task.assigned_service_provider.rating,
+        user_type: task.assigned_service_provider.user_type
+      }
+    end
+  end
+
+  attribute :completion_summary do |task|
+    task.completion_summary if task.completed?
+  end
+
+  attribute :can_start_work do |task|
+    task.can_start_work?
+  end
+
+  attribute :can_be_completed do |task|
+    task.can_be_completed?
+  end
 end

@@ -20,7 +20,19 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :categories, only: [:index, :show]
-      resources :tasks
+      resources :tasks do
+        member do
+          patch :start_work
+          patch :mark_complete
+        end
+        
+        resources :offers, except: [:update, :destroy] do
+          member do
+            patch :accept
+            patch :reject
+          end
+        end
+      end
     end
   end
 

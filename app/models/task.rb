@@ -3,9 +3,8 @@ class Task < ApplicationRecord
 
   belongs_to :user
   belongs_to :category
-  # TODO: Add offers relationship when Offer model is created
-  # has_many :offers, dependent: :destroy
-  # belongs_to :assigned_offer, class_name: 'Offer', optional: true
+  has_many :offers, dependent: :destroy
+  belongs_to :assigned_offer, class_name: 'Offer', optional: true
 
   # Enums for status
   enum status: {
@@ -44,10 +43,81 @@ class Task < ApplicationRecord
     open?
   end
 
-  # TODO: Add offer-related methods when Offer model is created
-  # def assign_to_offer!(offer)
-  # def assigned_service_provider
-  # etc.
+  def assign_to_offer!(offer)
+    return false unless can_receive_offers?
+    return false unless offer.can_be_accepted?
+    
+    transaction do
+      # Update offer status
+      offer.update_columns(
+        status: 'accepted',
+        accepted_at: Time.current
+      )
+      
+      # Update task status and assignment
+      update_columns(
+        status: 'assigned',
+        assigned_offer_id: offer.id
+      )
+      
+      # Reject all other offers
+      offers.where.not(id: offer.id).update_all(
+        status: 'rejected',
+        rejected_at: Time.current
+      )
+    end
+    
+    true
+  end
+  
+  def assigned_service_provider
+    assigned_offer&.service_provider
+  end
+
+  def can_start_work?
+    assigned? && assigned_offer.present?
+  end
+
+  def can_be_completed?
+    in_progress? && assigned_offer.present?
+  end
+
+  def start_work!
+    return false unless can_start_work?
+    
+    update!(status: 'in_progress')
+    true
+  end
+
+  def mark_complete!(completion_notes = nil)
+    return false unless can_be_completed?
+    
+    transaction do
+      update!(
+        status: 'completed',
+        completed_at: Time.current
+      )
+      
+      # Log completion in assigned offer
+      assigned_offer.update!(
+        completion_notes: completion_notes,
+        completed_at: Time.current
+      )
+    end
+    
+    true
+  end
+
+  def completion_summary
+    return nil unless completed?
+    
+    {
+      completed_at: completed_at,
+      service_provider: assigned_service_provider&.full_name,
+      final_price: final_price,
+      completion_notes: assigned_offer&.completion_notes
+    }
+  end
 
   def self.inactive_statuses
     ['completed', 'cancelled']
