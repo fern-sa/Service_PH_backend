@@ -3,16 +3,26 @@ Geocoder.configure(
   lookup: :nominatim,
   
   # Be respectful with requests (required by Nominatim)
-  timeout: 5,
+  timeout: 10,
   
   # Philippines-specific settings
   params: {
     countrycodes: 'ph',  # Limit results to Philippines
     addressdetails: 1,   # Get detailed address components
-    format: 'json'
+    format: 'json',
+    limit: 1,            # Get only the best result
+    'accept-language': 'en' # Get English results
   },
   
   # Cache results to avoid repeated API calls
   cache: Rails.cache,
-  cache_prefix: 'geocoder:'
+  cache_prefix: 'geocoder:',
+  
+  # Units for distance calculations
+  units: :km,
+  
+  # HTTP headers
+  http_headers: {
+    "User-Agent" => "ServicePH Rails App"
+  }
 )
