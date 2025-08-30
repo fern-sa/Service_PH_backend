@@ -10,6 +10,7 @@ class User < ApplicationRecord
 
   has_one_attached :profile_picture
   has_many :tasks, dependent: :destroy
+  has_many :offers, foreign_key: 'service_provider_id', dependent: :destroy
   
   enum user_type: { 
     customer: 'customer', 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_08_30_014914) do
+ActiveRecord::Schema[7.2].define(version: 2025_08_30_104814) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -52,6 +52,25 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_30_014914) do
     t.datetime "updated_at", null: false
     t.index ["active"], name: "index_categories_on_active"
     t.index ["sort_order"], name: "index_categories_on_sort_order"
+  end
+
+  create_table "offers", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "service_provider_id", null: false
+    t.decimal "price", precision: 10, scale: 2, null: false
+    t.text "message", null: false
+    t.string "status", default: "pending"
+    t.datetime "availability_date", null: false
+    t.text "terms"
+    t.datetime "accepted_at"
+    t.datetime "rejected_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["availability_date"], name: "index_offers_on_availability_date"
+    t.index ["service_provider_id"], name: "index_offers_on_service_provider_id"
+    t.index ["status"], name: "index_offers_on_status"
+    t.index ["task_id", "service_provider_id"], name: "index_offers_on_task_id_and_service_provider_id", unique: true
+    t.index ["task_id"], name: "index_offers_on_task_id"
   end
 
   create_table "tasks", force: :cascade do |t|
@@ -128,6 +147,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_30_014914) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "offers", "tasks"
+  add_foreign_key "offers", "users", column: "service_provider_id"
   add_foreign_key "tasks", "categories"
   add_foreign_key "tasks", "users"
 end
