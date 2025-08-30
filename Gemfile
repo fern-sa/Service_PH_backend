@@ -51,4 +51,6 @@ gem 'devise-jwt', '~> 0.12.1'
 
 gem 'jsonapi-serializer'
 gem 'active_model_serializers', '~> 0.10.15'
+gem 'geocoder', '~> 1.8'
+gem 'kaminari', '~> 1.2'
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_08_29_224206) do
+ActiveRecord::Schema[7.2].define(version: 2025_08_30_014914) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -52,6 +52,33 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_29_224206) do
     t.datetime "updated_at", null: false
     t.index ["active"], name: "index_categories_on_active"
     t.index ["sort_order"], name: "index_categories_on_sort_order"
+  end
+
+  create_table "tasks", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "category_id", null: false
+    t.string "title", null: false
+    t.text "description", null: false
+    t.decimal "budget_min", precision: 10, scale: 2
+    t.decimal "budget_max", precision: 10, scale: 2
+    t.string "location", null: false
+    t.decimal "latitude", precision: 10, scale: 6
+    t.decimal "longitude", precision: 10, scale: 6
+    t.string "city"
+    t.string "province"
+    t.datetime "preferred_date"
+    t.string "status", default: "open"
+    t.integer "assigned_offer_id"
+    t.datetime "completed_at"
+    t.decimal "final_price", precision: 10, scale: 2
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_tasks_on_category_id"
+    t.index ["created_at"], name: "index_tasks_on_created_at"
+    t.index ["latitude", "longitude"], name: "index_tasks_on_latitude_and_longitude"
+    t.index ["preferred_date"], name: "index_tasks_on_preferred_date"
+    t.index ["status"], name: "index_tasks_on_status"
+    t.index ["user_id"], name: "index_tasks_on_user_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -101,4 +128,6 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_29_224206) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "tasks", "categories"
+  add_foreign_key "tasks", "users"
 end
