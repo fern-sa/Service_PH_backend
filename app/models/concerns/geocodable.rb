@@ -31,7 +31,7 @@ module Geocodable
   end
   
   def find_best_geocoding_result
-    # Try different search strategies
+    # Trying different search strategies
     search_queries = [
       location,  # Original search
     ]

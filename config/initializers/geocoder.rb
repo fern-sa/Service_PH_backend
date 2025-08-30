@@ -1,8 +1,8 @@
 Geocoder.configure(
-  # Use OpenStreetMap's free Nominatim API
+  # OpenStreetMap's free Nominatim API
   lookup: :nominatim,
   
-  # Be respectful with requests (required by Nominatim)
+  # Request Timeouts (limits) (required by Nominatim)
   timeout: 10,
   
   # Philippines-specific settings
@@ -10,7 +10,7 @@ Geocoder.configure(
     countrycodes: 'ph',  # Limit results to Philippines
     addressdetails: 1,   # Get detailed address components
     format: 'json',
-    limit: 1,            # Get only the best result
+    limit: 1,            
     'accept-language': 'en' # Get English results
   },
   
