@@ -74,6 +74,51 @@ class Task < ApplicationRecord
     assigned_offer&.service_provider
   end
 
+  def can_start_work?
+    assigned? && assigned_offer.present?
+  end
+
+  def can_be_completed?
+    in_progress? && assigned_offer.present?
+  end
+
+  def start_work!
+    return false unless can_start_work?
+    
+    update!(status: 'in_progress')
+    true
+  end
+
+  def mark_complete!(completion_notes = nil)
+    return false unless can_be_completed?
+    
+    transaction do
+      update!(
+        status: 'completed',
+        completed_at: Time.current
+      )
+      
+      # Log completion in assigned offer
+      assigned_offer.update!(
+        completion_notes: completion_notes,
+        completed_at: Time.current
+      )
+    end
+    
+    true
+  end
+
+  def completion_summary
+    return nil unless completed?
+    
+    {
+      completed_at: completed_at,
+      service_provider: assigned_service_provider&.full_name,
+      final_price: final_price,
+      completion_notes: assigned_offer&.completion_notes
+    }
+  end
+
   def self.inactive_statuses
     ['completed', 'cancelled']
   end

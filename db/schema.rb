@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_08_30_104814) do
+ActiveRecord::Schema[7.2].define(version: 2025_08_30_142021) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -66,6 +66,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_08_30_104814) do
     t.datetime "rejected_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.text "completion_notes"
+    t.datetime "completed_at"
     t.index ["availability_date"], name: "index_offers_on_availability_date"
     t.index ["service_provider_id"], name: "index_offers_on_service_provider_id"
     t.index ["status"], name: "index_offers_on_status"

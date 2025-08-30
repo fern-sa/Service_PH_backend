@@ -12,8 +12,8 @@ class Offer < ApplicationRecord
   validates :message, presence: true, length: { minimum: 10, maximum: 500 }
   validates :availability_date, presence: true
   validate :availability_date_not_in_past
-  validate :service_provider_can_make_offer
-  validate :task_can_receive_offers
+  validate :service_provider_can_make_offer, on: :create
+  validate :task_can_receive_offers, on: :create
   validates :service_provider_id, uniqueness: { 
     scope: :task_id, 
     message: "can only make one offer per task" 

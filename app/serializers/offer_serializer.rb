@@ -2,7 +2,8 @@ class OfferSerializer
   include JSONAPI::Serializer
   
   attributes :id, :price, :message, :status, :availability_date, :terms, 
-             :accepted_at, :rejected_at, :created_at, :updated_at
+             :accepted_at, :rejected_at, :completion_notes, :completed_at, 
+             :created_at, :updated_at
 
   attribute :service_provider do |offer|
     {
