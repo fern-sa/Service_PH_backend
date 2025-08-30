@@ -9,6 +9,7 @@ class User < ApplicationRecord
          :jwt_authenticatable, jwt_revocation_strategy: self
 
   has_one_attached :profile_picture
+  has_many :tasks, dependent: :destroy
   
   enum user_type: { 
     customer: 'customer', 
