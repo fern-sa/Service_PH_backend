@@ -40,9 +40,14 @@ class Users::RegistrationsController < Devise::RegistrationsController
       else
         @user = current_user
     end
+
+    # Check if dashboard stats should be included
+    include_stats = params[:include_stats] == 'true'
+    serializer_params = include_stats ? { include_stats: true } : {}
+
     render json: {
         status: {code: 200},
-        data: UserSerializer.new(@user).serializable_hash[:data][:attributes]
+        data: UserSerializer.new(@user, { params: serializer_params }).serializable_hash[:data][:attributes]
       }
   end
 
