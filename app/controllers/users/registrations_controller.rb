@@ -34,31 +34,41 @@ class Users::RegistrationsController < Devise::RegistrationsController
   end
 
   def show
-    if params[:user][:id].present? 
-        @user = User.find_by(id: params[:user][:id])
-        render json: { error: "User not found" }, status: :not_found and return if @user == nil
-      else
-        @user = current_user
+    if id_param.present? 
+      @user = User.find_by(id: id_param)
+      render json: { error: "User not found" }, status: :not_found and return if @user == nil
+    else
+      @user = current_user
     end
+    serialize_and_santize
     render json: {
-        status: {code: 200},
-        data: UserSerializer.new(@user).serializable_hash[:data][:attributes]
-      }
+      status: {code: 200},
+      data: @user_serialized
+    }
   end
 
   private
+
+  def id_param
+      params.dig(:user, :id)
+  end
+
+  def serialize_and_santize
+    @user_serialized = UserSerializer.new(@user).serializable_hash[:data][:attributes]
+    @user_serialized = @user_serialized.except(:location, :longitude, :latitude, :age, :phone, :email, :sign_in_count) if !current_user.admin?
+  end
 
   def user_update_params
     params.require(:user).permit(:email, :first_name, :last_name, :profile_picture, :age, :longitude, :latitude, :location, :bio, :phone)
   end
 
   def check_if_admin_or_current_user
-    return @user = current_user if !params[:user][:id].present?
-    if current_user.admin? && params[:user][:id].present?
-      @user = User.find_by(id: params[:user][:id])
+    return @user = current_user if !id_param.present?
+    if current_user.admin? && id_param.present?
+      @user = User.find_by(id: id_param)
       render json: { error: "User not found" }, status: :not_found and return if @user == nil
       return @user
-    elsif !current_user.admin? && params[:user][:id].present?
+    elsif !current_user.admin? && id_param.present?
       render json: { error: "Not authorized"}, status: :unauthorized
       return
     end
@@ -75,6 +85,8 @@ class Users::RegistrationsController < Devise::RegistrationsController
         status: {message: "User couldn't be created successfully. #{current_user.errors.full_messages.to_sentence}"}
       }, status: :unprocessable_entity
     end
+
+    
   end
   # before_action :configure_sign_up_params, only: [:create]
   # before_action :configure_account_update_params, only: [:update]
