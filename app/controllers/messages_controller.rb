@@ -23,8 +23,8 @@ class MessagesController < ApplicationController
   end
 
   def check_receiver
-    return User.find_by(id: @offer.service_provider_id) if @offer.service_provider_id == current_user.id
-    User.find_by(id: Task.find_by(id: @offer.task_id).id)
+    return User.find_by(id: @offer.service_provider_id) if @offer.service_provider_id != current_user.id
+    User.find_by(id: Task.find_by(id: @offer.task_id).user_id)
   end
 
   def build_message
