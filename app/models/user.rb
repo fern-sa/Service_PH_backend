@@ -11,6 +11,8 @@ class User < ApplicationRecord
   has_one_attached :profile_picture
   has_many :tasks, dependent: :destroy
   has_many :offers, foreign_key: 'service_provider_id', dependent: :destroy
+  has_many :sent_messages, class_name: "Message", foreign_key: "sender_id", dependent: :destroy
+  has_many :received_messages, class_name: "Message", foreign_key: "receiver_id", dependent: :destroy
   
   enum user_type: { 
     customer: 'customer', 
