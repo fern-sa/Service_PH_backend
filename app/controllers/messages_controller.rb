@@ -14,11 +14,13 @@ class MessagesController < ApplicationController
 
   def fetch_log
     render json: { error: "Offer not found" }, status: :not_found and return unless @offer
+    set_customer_and_service_provider
+    render json: { error: "You must be part of the message log or an admin to view it" }, status: :unauthorized and return unless check_authorization
     messages = Message.fetch_log(@offer.id)
 
     render json: {
-      customer: UserSerializer.new(User.find_by(id: Task.find_by(id: @offer.task_id).user_id)).serializable_hash,
-      service_provider: UserSerializer.new(User.find_by(id: @offer.service_provider_id)).serializable_hash,
+      customer: UserSerializer.new(@customer).serializable_hash,
+      service_provider: UserSerializer.new(@service_provider).serializable_hash,
       log: MessageSerializer.new(messages).serializable_hash, 
     }, status: :ok
   end
@@ -37,9 +39,18 @@ class MessagesController < ApplicationController
     @offer = Offer.find_by(id: params[:offer_id])
   end
 
+  def set_customer_and_service_provider
+    @customer = User.find_by(id: Task.find_by(id: @offer.task_id).user_id)
+    @service_provider = User.find_by(id: @offer.service_provider_id)
+  end
+
   def check_receiver
-    return User.find_by(id: @offer.service_provider_id) if @offer.service_provider_id != current_user.id
-    User.find_by(id: Task.find_by(id: @offer.task_id).user_id)
+    return @customer if @service_provider.id != current_user.id
+    @service_provider
+  end
+
+  def check_authorization
+    current_user.id == @customer.id || current_user.id == @service_provider.id || current_user.admin?
   end
 
   def build_message
