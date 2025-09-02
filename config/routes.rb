@@ -16,7 +16,13 @@ Rails.application.routes.draw do
     get 'users/index', to: 'users/registrations#index'
   end
 
-  resources :messages, only: [:create]
+  resources :messages, only: [:create] do
+    collection do
+      get :fetch_log
+    end
+  end
+
+  
 
   # API routes for Core Business Functionality
   namespace :api do
