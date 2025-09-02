@@ -34,7 +34,11 @@ class Users::RegistrationsController < Devise::RegistrationsController
   end
 
   def show
-    if params[:user][:id].present? 
+    unless current_user
+      render json: { error: "Authentication required" }, status: :unauthorized and return
+    end
+
+    if params[:user] && params[:user][:id].present? 
         @user = User.find_by(id: params[:user][:id])
         render json: { error: "User not found" }, status: :not_found and return if @user == nil
       else
@@ -58,7 +62,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
   end
 
   def check_if_admin_or_current_user
-    return @user = current_user if !params[:user][:id].present?
+    return @user = current_user if !params[:user] || !params[:user][:id].present?
     if current_user.admin? && params[:user][:id].present?
       @user = User.find_by(id: params[:user][:id])
       render json: { error: "User not found" }, status: :not_found and return if @user == nil
