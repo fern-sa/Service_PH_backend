@@ -33,17 +33,25 @@ class Users::RegistrationsController < Devise::RegistrationsController
   end
 
   def show
-    if id_param.present? 
-      @user = User.find_by(id: id_param)
-      render json: { error: "User not found" }, status: :not_found and return unless @user
-    else
-      @user = current_user
+    unless current_user
+      render json: { error: "Authentication required" }, status: :unauthorized and return
     end
-    serialize_and_santize
+
+    if params[:user] && params[:user][:id].present? 
+        @user = User.find_by(id: params[:user][:id])
+        render json: { error: "User not found" }, status: :not_found and return if @user == nil
+      else
+        @user = current_user
+    end
+
+    # Check if dashboard stats should be included
+    include_stats = params[:include_stats] == 'true'
+    serializer_params = include_stats ? { include_stats: true } : {}
+
     render json: {
-      status: {code: 200},
-      data: @user_serialized
-    }
+        status: {code: 200},
+        data: UserSerializer.new(@user, { params: serializer_params }).serializable_hash[:data][:attributes]
+      }
   end
 
   private
@@ -62,9 +70,9 @@ class Users::RegistrationsController < Devise::RegistrationsController
   end
 
   def check_if_admin_or_current_user
-    return @user = current_user if !id_param.present?
-    if current_user.admin? && id_param.present?
-      @user = User.find_by(id: id_param)
+    return @user = current_user if !params[:user] || !params[:user][:id].present?
+    if current_user.admin? && params[:user][:id].present?
+      @user = User.find_by(id: params[:user][:id])
       render json: { error: "User not found" }, status: :not_found and return if @user == nil
       return @user
     elsif !current_user.admin? && id_param.present?
