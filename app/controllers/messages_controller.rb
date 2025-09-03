@@ -5,6 +5,7 @@ class MessagesController < ApplicationController
 
   def create
     render json: { error: "Offer not found" }, status: :not_found and return unless @offer
+    render json: { error: "Offer not accepted yet" }, status: :unprocessable_entity and return unless @offer.accepted?
       if build_message.save
         render json: MessageSerializer.new(@message).serializable_hash, status: :created
       else
