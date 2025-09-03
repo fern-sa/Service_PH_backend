@@ -1,5 +1,6 @@
 class User < ApplicationRecord
   include Devise::JWT::RevocationStrategies::JTIMatcher
+  before_create :prevent_admin_signup
 
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
@@ -45,5 +46,14 @@ class User < ApplicationRecord
 
   def can_provide_services?
     service_provider? && active? && verified?
+  end
+
+  private
+
+  def prevent_admin_signup
+    if user_type == "admin"
+      errors.add(:user_type, "cannot be admin")
+      throw(:abort)
+    end
   end
 end

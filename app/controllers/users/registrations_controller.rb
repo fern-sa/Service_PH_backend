@@ -55,6 +55,14 @@ class Users::RegistrationsController < Devise::RegistrationsController
       }
   end
 
+  def create
+    if params.dig(:user, :user_type) == "admin"
+      return render json: { error: "You cannot sign up as an admin." }, status: :forbidden
+    end
+
+    super
+  end
+
   private
 
   def serialize_and_santize
