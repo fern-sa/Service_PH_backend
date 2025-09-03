@@ -66,7 +66,9 @@ class Users::RegistrationsController < Devise::RegistrationsController
   private
 
   def user_update_params
-    params.require(:user).permit(:email, :first_name, :last_name, :profile_picture, :age, :longitude, :latitude, :location, :bio, :phone)
+    permitted = [:email, :first_name, :last_name, :profile_picture, :age, :longitude, :latitude, :location, :bio, :phone]
+    permitted << :user_type if current_user&.admin?
+    params.require(:user).permit(permitted)
   end
 
   def respond_with(current_user, _opts = {})
