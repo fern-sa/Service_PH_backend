@@ -38,8 +38,8 @@ class Users::RegistrationsController < Devise::RegistrationsController
       render json: { error: "Authentication required" }, status: :unauthorized and return
     end
 
-    if params[:user] && params[:user][:id].present? 
-        @user = User.find_by(id: params[:user][:id])
+    if target_user_id.present? 
+        @user = User.find_by(id: target_user_id)
         render json: { error: "User not found" }, status: :not_found and return if @user == nil
       else
         @user = current_user
@@ -64,11 +64,6 @@ class Users::RegistrationsController < Devise::RegistrationsController
   end
 
   private
-
-  def serialize_and_santize
-    @user_serialized = UserSerializer.new(@user).serializable_hash[:data][:attributes]
-    @user_serialized = @user_serialized.except(:location, :longitude, :latitude, :age, :phone, :email, :sign_in_count) if !current_user.admin?
-  end
 
   def user_update_params
     params.require(:user).permit(:email, :first_name, :last_name, :profile_picture, :age, :longitude, :latitude, :location, :bio, :phone)

@@ -1,8 +1,11 @@
 module CheckAdminOrCurrentUser
   extend ActiveSupport::Concern
 
+  def target_user_id
+    params.dig(:user, :id)
+  end
+
   def check_if_admin_or_current_user
-    target_user_id = params.dig(:user, :id)
     return @user = current_user if target_user_id.blank?
     
     if current_user.admin? || target_user_id.to_i == current_user.id
