@@ -40,7 +40,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
     if target_user_id.present? 
         @user = User.find_by(id: target_user_id)
-        render json: { error: "User not found" }, status: :not_found and return if @user == nil
+        return render json: { error: "User not found" }, status: :not_found unless @user
       else
         @user = current_user
     end
