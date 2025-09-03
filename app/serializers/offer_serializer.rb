@@ -3,7 +3,7 @@ class OfferSerializer
   
   attributes :id, :price, :message, :status, :availability_date, :terms, 
              :accepted_at, :rejected_at, :completion_notes, :completed_at, 
-             :created_at, :updated_at
+             :created_at, :updated_at, :payment_method
 
   attribute :service_provider do |offer|
     {
@@ -34,5 +34,26 @@ class OfferSerializer
 
   attribute :provider_rating do |offer|
     offer.provider_rating
+  end
+  
+  attribute :payment_info do |offer|
+    payment = offer.payment
+    if payment
+      {
+        id: payment.id,
+        amount: payment.amount,
+        status: payment.status,
+        payment_method: payment.payment_method,
+        stripe_payment_intent_id: payment.stripe_payment_intent_id
+      }
+    else
+      nil
+    end
+  end
+  
+  attribute :completion_photo_urls do |offer|
+    offer.completion_photos.map do |photo|
+      Rails.application.routes.url_helpers.url_for(photo)
+    end
   end
 end

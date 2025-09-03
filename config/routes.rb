@@ -30,6 +30,7 @@ Rails.application.routes.draw do
           member do
             patch :accept
             patch :reject
+            patch :confirm_cash_payment
           end
         end
       end

@@ -3,9 +3,9 @@ class Api::V1::OffersController < ApplicationController
   
   before_action :authenticate_user!
   before_action :set_task
-  before_action :set_offer, only: [:show, :accept, :reject]
+  before_action :set_offer, only: [:show, :accept, :reject, :confirm_cash_payment]
   before_action :authorize_service_provider, only: [:create]
-  before_action :authorize_task_owner, only: [:index, :accept, :reject]
+  before_action :authorize_task_owner, only: [:index, :accept, :reject, :confirm_cash_payment]
   before_action :authorize_offer_access, only: [:show]
 
   def index
@@ -43,7 +43,23 @@ class Api::V1::OffersController < ApplicationController
   end
 
   def accept
+    if @offer.payment_method == 'online'
+      # For online payment, process payment first
+      payment_result = process_online_payment
+      return unless payment_result[:success]
+    end
+
     if @offer.accept!
+      # Create payment record
+      payment = @offer.create_payment!
+      
+      if @offer.payment_method == 'online' && payment_result
+        payment.update!(
+          status: 'escrowed',
+          stripe_payment_intent_id: payment_result[:payment_intent_id]
+        )
+      end
+
       render json: {
         status: { code: 200, message: 'Offer accepted successfully' },
         data: OfferSerializer.new(@offer.reload).serializable_hash[:data][:attributes]
@@ -68,6 +84,27 @@ class Api::V1::OffersController < ApplicationController
     end
   end
 
+  def confirm_cash_payment
+    payment = @offer.payment
+    
+    unless payment&.cash? && payment.pending?
+      return render json: {
+        status: { message: 'Cash payment cannot be confirmed' }
+      }, status: :unprocessable_entity
+    end
+
+    if payment.update(status: 'released')
+      render json: {
+        status: { code: 200, message: 'Cash payment confirmed' },
+        data: OfferSerializer.new(@offer.reload).serializable_hash[:data][:attributes]
+      }
+    else
+      render json: {
+        status: { message: 'Failed to confirm payment' }
+      }, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def set_task
@@ -83,7 +120,7 @@ class Api::V1::OffersController < ApplicationController
   end
 
   def offer_params
-    params.require(:offer).permit(:price, :message, :availability_date, :terms)
+    params.require(:offer).permit(:price, :message, :availability_date, :terms, :payment_method)
   end
 
   def build_offer
@@ -114,5 +151,36 @@ class Api::V1::OffersController < ApplicationController
     end
     
     render json: { error: 'Not authorized' }, status: :forbidden
+  end
+
+  def process_online_payment
+    begin
+      payment_intent = Stripe::PaymentIntent.create({
+        amount: (@offer.price * 100).to_i,
+        currency: 'php',
+        automatic_payment_methods: { enabled: true },
+        metadata: {
+          offer_id: @offer.id,
+          task_id: @task.id,
+          customer_id: current_user.id
+        }
+      })
+      
+      {
+        success: true,
+        payment_intent_id: payment_intent.id,
+        client_secret: payment_intent.client_secret
+      }
+    rescue Stripe::CardError => e
+      render json: {
+        status: { message: "Payment failed: #{e.user_message}" }
+      }, status: :payment_required
+      { success: false }
+    rescue Stripe::StripeError => e
+      render json: {
+        status: { message: "Payment processing error: #{e.message}" }
+      }, status: :unprocessable_entity
+      { success: false }
+    end
   end
 end
