@@ -68,6 +68,10 @@ class Offer < ApplicationRecord
     }
   end
 
+  def self.all_logs_in_db
+    includes(:task, :messages, :service_provider).map(&:as_log)
+  end
+
   private
 
   def availability_date_not_in_past

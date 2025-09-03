@@ -35,6 +35,18 @@ class MessagesController < ApplicationController
     render json: { offers: @offers.map(&:as_log) }, status: :ok
   end
 
+  def fetch_all_logs_in_db
+    return render json: { error: "You must be an admin to view this" }, status: :unauthorized unless current_user.admin?
+    logs = Offer.all_logs_in_db
+
+    if logs.empty?
+      render json: { error: "No offers with message logs found" }, status: :not_found
+    else
+      render json: { offers: logs }, status: :ok
+    end
+  end
+
+
   private
 
   def message_params
