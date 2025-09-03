@@ -95,18 +95,40 @@ class Api::V1::TasksController < ApplicationController
       }, status: :unprocessable_entity
     end
 
-    completion_notes = params[:completion_notes]
-
-    if @task.mark_complete!(completion_notes)
-      render json: {
-        status: { code: 200, message: 'Task marked as completed' },
-        data: TaskSerializer.new(@task.reload).serializable_hash[:data][:attributes]
-      }
-    else
-      render json: {
-        status: { message: 'Failed to complete task' }
+    # Check for completion photos
+    unless params[:completion_photos].present?
+      return render json: {
+        status: { message: 'Completion photos are required' }
       }, status: :unprocessable_entity
     end
+
+    completion_notes = params[:completion_notes]
+    completion_photos = params[:completion_photos]
+
+    ActiveRecord::Base.transaction do
+      # Attach completion photos to the offer
+      @task.assigned_offer.completion_photos.attach(completion_photos)
+      
+      # Mark task as complete
+      if @task.mark_complete!(completion_notes)
+        # Release payment if online payment
+        payment = @task.assigned_offer.payment
+        if payment&.online? && payment.escrowed?
+          payment.release!
+        end
+        
+        render json: {
+          status: { code: 200, message: 'Task marked as completed' },
+          data: TaskSerializer.new(@task.reload).serializable_hash[:data][:attributes]
+        }
+      else
+        raise ActiveRecord::Rollback
+      end
+    end
+  rescue => e
+    render json: {
+      status: { message: "Failed to complete task: #{e.message}" }
+    }, status: :unprocessable_entity
   end
 
   private
