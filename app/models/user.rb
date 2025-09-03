@@ -40,6 +40,20 @@ class User < ApplicationRecord
           lng, lat, radius * 1000)
   }
 
+  def soft_delete
+    self.skip_reconfirmation!
+    update(
+      deleted_at: Time.current,
+      first_name: "Deleted",
+      last_name: "User",
+      email: scrubbed_email
+    )
+  end
+
+  def deleted?
+    deleted_at.present?
+  end
+
   def full_name
     "#{first_name} #{last_name}"
   end
@@ -49,6 +63,10 @@ class User < ApplicationRecord
   end
 
   private
+
+  def scrubbed_email
+    "deleted_user_#{id}@deleted.com"
+  end
 
   def prevent_admin_signup
     if user_type == "admin"

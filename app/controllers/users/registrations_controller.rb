@@ -8,7 +8,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   def destroy
     return if !check_if_admin_or_current_user
-    if @user.destroy
+    if @user.soft_delete
       render json: { message: "User account deleted successfully." }, status: :ok
     else
       render json: { error: "Not authorized to delete this account." }, status: :unauthorized
