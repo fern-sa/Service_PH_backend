@@ -40,6 +40,8 @@ class User < ApplicationRecord
           lng, lat, radius * 1000)
   }
 
+  SENSITIVE_FIELDS = [:user_type, :verified]
+
   def soft_delete
     self.skip_reconfirmation!
     update(
@@ -60,6 +62,12 @@ class User < ApplicationRecord
 
   def can_provide_services?
     service_provider? && active? && verified?
+  end
+
+  def self.permitted_fields(is_admin: false)
+    base = [:email, :first_name, :last_name, :profile_picture, :age,
+            :longitude, :latitude, :location, :bio, :phone]
+    is_admin ? base + SENSITIVE_FIELDS : base
   end
 
   private
