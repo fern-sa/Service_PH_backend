@@ -19,6 +19,7 @@ Rails.application.routes.draw do
   resources :messages, only: [:create] do
     collection do
       get :fetch_log
+      get "user_log", to: "messages#fetch_all_logs_for_user"
     end
   end
 

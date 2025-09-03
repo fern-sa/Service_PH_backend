@@ -3,7 +3,7 @@ class MessagesController < ApplicationController
   respond_to :json
   before_action :authenticate_user!
   before_action :set_offer, only: [:create, :fetch_log]
-  before_action :set_offers, only: []
+
 
   def create
     render json: { error: "Offer not found" }, status: :not_found and return unless @offer
@@ -29,8 +29,10 @@ class MessagesController < ApplicationController
   end
 
   def fetch_all_logs_for_user
+    return if !check_if_admin_or_current_user
+    set_offers
     render json: { error: "No accepted offers with message logs found for this user" }, status: :not_found and return if @offers.empty?
-    render json: { offers: offers.map(&:as_log) }, status: :ok
+    render json: { offers: @offers.map(&:as_log) }, status: :ok
   end
 
   private
@@ -47,12 +49,8 @@ class MessagesController < ApplicationController
     @offer = Offer.find_by(id: params[:offer_id])
   end
 
-  # def set_user
-
-  # end
-
   def set_offers
-    @offers = Offer.accepted.for_user(current_user.id).includes(:task, :messages)
+    @offers = Offer.accepted.for_user(@user.id).includes(:task, :messages)
   end
 
   def set_customer_and_service_provider

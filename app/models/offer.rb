@@ -1,6 +1,7 @@
 class Offer < ApplicationRecord
   belongs_to :task
   belongs_to :service_provider, class_name: 'User'
+  has_many :messages, dependent: :destroy 
 
   enum status: {
     pending: 'pending',
