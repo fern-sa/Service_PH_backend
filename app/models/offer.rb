@@ -60,6 +60,10 @@ class Offer < ApplicationRecord
   def as_log
     {
       offer_id: id,
+      service_provider_id: service_provider.id,
+      service_provider_full_name: service_provider.full_name,
+      customer_id: task.user.id,
+      customer_full_name: task.user.full_name,
       log: MessageSerializer.new(Message.fetch_log(id)).serializable_hash
     }
   end
