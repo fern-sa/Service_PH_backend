@@ -1,10 +1,13 @@
 class MessagesController < ApplicationController
+  include CheckAdminOrCurrentUser
   respond_to :json
   before_action :authenticate_user!
-  before_action :set_offer, only: [:create]
+  before_action :set_offer, only: [:create, :fetch_log]
+
 
   def create
     render json: { error: "Offer not found" }, status: :not_found and return unless @offer
+    render json: { error: "Offer not accepted yet" }, status: :unprocessable_entity and return unless @offer.accepted?
       if build_message.save
         render json: MessageSerializer.new(@message).serializable_hash, status: :created
       else
@@ -12,22 +15,72 @@ class MessagesController < ApplicationController
       end
   end
 
+  def fetch_log
+    render json: { error: "Offer not found" }, status: :not_found and return unless @offer
+    set_customer_and_service_provider
+    render json: { error: "You must be part of the message log or an admin to view it" }, status: :unauthorized and return unless check_authorization
+    messages = Message.fetch_log(@offer.id)
+
+    render json: {
+      customer: UserSerializer.new(@customer).serializable_hash,
+      service_provider: UserSerializer.new(@service_provider).serializable_hash,
+      log: MessageSerializer.new(messages).serializable_hash, 
+    }, status: :ok
+  end
+
+  def fetch_all_logs_for_user
+    return if !check_if_admin_or_current_user
+    set_offers
+    render json: { error: "No accepted offers with message logs found for this user" }, status: :not_found and return if @offers.empty?
+    render json: { offers: @offers.map(&:as_log) }, status: :ok
+  end
+
+  def fetch_all_logs_in_db
+    return render json: { error: "You must be an admin to view this" }, status: :unauthorized unless current_user.admin?
+    logs = Offer.all_logs_in_db
+
+    if logs.empty?
+      render json: { error: "No offers with message logs found" }, status: :not_found
+    else
+      render json: { offers: logs }, status: :ok
+    end
+  end
+
+
   private
 
   def message_params
     params.permit(:body, :offer_id, message_images: [])
   end
 
+  def log_fetch_params
+    params.require(:offer_id)
+  end
+
   def set_offer
     @offer = Offer.find_by(id: params[:offer_id])
   end
 
+  def set_offers
+    @offers = Offer.accepted.for_user(@user.id).includes(:task, :messages)
+  end
+
+  def set_customer_and_service_provider
+    @customer = User.find_by(id: Task.find_by(id: @offer.task_id).user_id)
+    @service_provider = User.find_by(id: @offer.service_provider_id)
+  end
+
   def check_receiver
-    return User.find_by(id: @offer.service_provider_id) if @offer.service_provider_id == current_user.id
-    User.find_by(id: Task.find_by(id: @offer.task_id).id)
+    return @customer if @service_provider.id == current_user.id
+    @service_provider
+  end
+
+  def check_authorization
+    current_user.id == @customer.id || current_user.id == @service_provider.id || current_user.admin?
   end
 
   def build_message
+    set_customer_and_service_provider
     @message = Message.new(
       body: params[:body],
       offer: @offer,
