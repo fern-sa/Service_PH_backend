@@ -16,6 +16,16 @@ Rails.application.routes.draw do
     get 'users/index', to: 'users/registrations#index'
   end
 
+  resources :messages, only: [:create] do
+    collection do
+      get :fetch_log
+      get "user_log", to: "messages#fetch_all_logs_for_user"
+      get "all_logs", to: "messages#fetch_all_logs_in_db"
+    end
+  end
+
+  
+
   # API routes for Core Business Functionality
   namespace :api do
     namespace :v1 do
