@@ -7,10 +7,8 @@ class Message < ApplicationRecord
 
   validates :body, presence: true
 
-  # Scope for chronological order
   scope :chronological, -> { order(created_at: :asc) }
 
-  # Class method to fetch messages for an offer
   def self.fetch_log(offer_id)
     where(offer_id: offer_id).chronological
   end

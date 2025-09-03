@@ -23,6 +23,11 @@ class Offer < ApplicationRecord
   scope :accepted, -> { where(status: 'accepted') }
   scope :by_price, -> { order(:price) }
   scope :recent, -> { order(created_at: :desc) }
+  scope :for_user, ->(user_id) {
+    joins(:task)
+    .where(tasks: { user_id: user_id })
+    .or(Offer.where(service_provider_id: user_id))
+  }
 
   def can_be_accepted?
     pending? && task.open?
@@ -49,6 +54,13 @@ class Offer < ApplicationRecord
 
   def provider_rating
     service_provider.rating
+  end
+
+  def as_log
+    {
+      offer_id: id,
+      log: MessageSerializer.new(Message.fetch_log(id)).serializable_hash
+    }
   end
 
   private
