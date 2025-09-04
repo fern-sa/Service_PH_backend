@@ -1,5 +1,9 @@
 class Api::V1::OffersController < ApplicationController
   include Pagination
+  include ApiResponse
+  include ErrorHandling
+  include Serialization
+  include Authorization
   
   before_action :authenticate_user!
   before_action :set_task
@@ -11,97 +15,67 @@ class Api::V1::OffersController < ApplicationController
   def index
     offers = @task.offers.includes(:service_provider).recent
     
-    render json: {
-      status: { code: 200 },
-      data: {
-        offers: offers.map { |offer| OfferSerializer.new(offer).serializable_hash[:data][:attributes] },
-        task: { id: @task.id, title: @task.title, status: @task.status }
-      }
-    }
+    render_success(data: {
+      offers: serialized_offers(offers),
+      task: task_summary
+    })
   end
 
   def show
-    render json: {
-      status: { code: 200 },
-      data: OfferSerializer.new(@offer).serializable_hash[:data][:attributes]
-    }
+    render_success(data: serialized_offer(@offer))
   end
 
   def create
     @offer = build_offer
 
     if @offer.save
-      render json: {
-        status: { code: 201, message: 'Offer submitted successfully' },
-        data: OfferSerializer.new(@offer).serializable_hash[:data][:attributes]
-      }, status: :created
+      render_created(
+        data: serialized_offer(@offer),
+        message: 'Offer submitted successfully'
+      )
     else
-      render json: {
-        status: { message: "Offer couldn't be created: #{@offer.errors.full_messages.to_sentence}" }
-      }, status: :unprocessable_entity
+      render_error(
+        message: "Offer couldn't be created: #{@offer.errors.full_messages.to_sentence}"
+      )
     end
   end
 
   def accept
-    if @offer.payment_method == 'online'
-      # For online payment, process payment first
-      payment_result = process_online_payment
-      return unless payment_result[:success]
-    end
-
-    if @offer.accept!
-      # Create payment record
-      payment = @offer.create_payment!
-      
-      if @offer.payment_method == 'online' && payment_result
-        payment.update!(
-          status: 'escrowed',
-          stripe_payment_intent_id: payment_result[:payment_intent_id]
-        )
-      end
-
-      render json: {
-        status: { code: 200, message: 'Offer accepted successfully' },
-        data: OfferSerializer.new(@offer.reload).serializable_hash[:data][:attributes]
-      }
+    result = Offers::AcceptanceService.call(offer: @offer, current_user: current_user)
+    
+    if result.success?
+      render_success(
+        data: serialized_offer(result.data),
+        message: 'Offer accepted successfully'
+      )
     else
-      render json: {
-        status: { message: 'Unable to accept offer' }
-      }, status: :unprocessable_entity
+      handle_service_error(result)
     end
   end
 
   def reject
-    if @offer.reject!
-      render json: {
-        status: { code: 200, message: 'Offer rejected' },
-        data: OfferSerializer.new(@offer.reload).serializable_hash[:data][:attributes]
-      }
+    result = Offers::RejectionService.call(offer: @offer)
+    
+    if result.success?
+      render_success(
+        data: serialized_offer(result.data),
+        message: 'Offer rejected'
+      )
     else
-      render json: {
-        status: { message: 'Unable to reject offer' }
-      }, status: :unprocessable_entity
+      handle_service_error(result)
     end
   end
 
   def confirm_cash_payment
-    payment = @offer.payment
+    result = Payments::CashService.call(offer: @offer)
     
-    unless payment&.cash? && payment.pending?
-      return render json: {
-        status: { message: 'Cash payment cannot be confirmed' }
-      }, status: :unprocessable_entity
-    end
-
-    if payment.update(status: 'released')
-      render json: {
-        status: { code: 200, message: 'Cash payment confirmed' },
-        data: OfferSerializer.new(@offer.reload).serializable_hash[:data][:attributes]
-      }
+    if result.success?
+      render_success(
+        data: serialized_offer(@offer.reload),
+        message: 'Cash payment confirmed'
+      )
     else
-      render json: {
-        status: { message: 'Failed to confirm payment' }
-      }, status: :unprocessable_entity
+      handle_service_error(result)
     end
   end
 
@@ -109,14 +83,10 @@ class Api::V1::OffersController < ApplicationController
 
   def set_task
     @task = Task.find(params[:task_id])
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Task not found' }, status: :not_found
   end
 
   def set_offer
     @offer = @task.offers.find(params[:id])
-  rescue ActiveRecord::RecordNotFound
-    render json: { error: 'Offer not found' }, status: :not_found
   end
 
   def offer_params
@@ -129,58 +99,4 @@ class Api::V1::OffersController < ApplicationController
     offer
   end
 
-  def authorize_service_provider
-    unless current_user.service_provider?
-      render json: { error: 'Only service providers can make offers' }, status: :forbidden
-    end
-  end
-
-  def authorize_task_owner
-    unless current_user == @task.user
-      render json: { error: 'Not authorized' }, status: :forbidden
-    end
-  end
-
-  def authorize_offer_access
-    # Task owner can see any offer on their task
-    return if current_user == @task.user
-    
-    # Service provider can only see their own offers
-    if current_user.service_provider? && @offer.service_provider == current_user
-      return
-    end
-    
-    render json: { error: 'Not authorized' }, status: :forbidden
-  end
-
-  def process_online_payment
-    begin
-      payment_intent = Stripe::PaymentIntent.create({
-        amount: (@offer.price * 100).to_i,
-        currency: 'php',
-        automatic_payment_methods: { enabled: true },
-        metadata: {
-          offer_id: @offer.id,
-          task_id: @task.id,
-          customer_id: current_user.id
-        }
-      })
-      
-      {
-        success: true,
-        payment_intent_id: payment_intent.id,
-        client_secret: payment_intent.client_secret
-      }
-    rescue Stripe::CardError => e
-      render json: {
-        status: { message: "Payment failed: #{e.user_message}" }
-      }, status: :payment_required
-      { success: false }
-    rescue Stripe::StripeError => e
-      render json: {
-        status: { message: "Payment processing error: #{e.message}" }
-      }, status: :unprocessable_entity
-      { success: false }
-    end
-  end
 end

@@ -11,8 +11,6 @@ Rails.application.routes.draw do
     passwords: 'users/passwords'
   }
 
-  
-
   # API routes for Core Business Functionality
   namespace :api do
     namespace :v1 do
@@ -28,6 +26,13 @@ Rails.application.routes.draw do
             patch :accept
             patch :reject
             patch :confirm_cash_payment
+          end
+          
+          resources :payments, only: [:create] do
+            collection do
+              patch :confirm_cash
+              post :stripe_intent
+            end
           end
         end
       end
