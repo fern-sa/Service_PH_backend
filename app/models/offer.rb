@@ -1,31 +1,12 @@
 class Offer < ApplicationRecord
+  include OfferValidations
+  include OfferStateMachine
+  
   belongs_to :task
   belongs_to :service_provider, class_name: 'User'
   has_one :payment, dependent: :destroy
   has_many :messages, dependent: :destroy
   has_many_attached :completion_photos
-
-  enum status: {
-    pending: 'pending',
-    accepted: 'accepted',
-    rejected: 'rejected'
-  }
-
-  validates :price, presence: true, numericality: { greater_than: 0 }
-  validates :message, presence: true, length: { minimum: 10, maximum: 500 }
-  validates :availability_date, presence: true
-  validates :payment_method, inclusion: { in: %w[cash online] }
-  validate :availability_date_not_in_past
-  validate :service_provider_can_make_offer, on: :create
-  validate :task_can_receive_offers, on: :create
-  validate :completion_photos_required, if: :completed?
-  validates :service_provider_id, uniqueness: { 
-    scope: :task_id, 
-    message: "can only make one offer per task" 
-  }
-
-  scope :pending, -> { where(status: 'pending') }
-  scope :accepted, -> { where(status: 'accepted') }
   scope :by_price, -> { order(:price) }
   scope :recent, -> { order(created_at: :desc) }
   scope :for_user, ->(user_id) {
@@ -33,25 +14,6 @@ class Offer < ApplicationRecord
     .where(tasks: { user_id: user_id })
     .or(Offer.where(service_provider_id: user_id))
   }
-
-  def can_be_accepted?
-    pending? && task.open?
-  end
-
-  def accept!
-    return false unless can_be_accepted?
-    
-    task.assign_to_offer!(self)
-  end
-
-  def reject!
-    return false unless pending?
-    
-    update!(
-      status: 'rejected',
-      rejected_at: Time.current
-    )
-  end
 
   def provider_name
     service_provider.full_name
@@ -76,50 +38,6 @@ class Offer < ApplicationRecord
     includes(:task, :messages, :service_provider).map(&:as_log)
   end
 
-  private
-
-  def availability_date_not_in_past
-    return unless availability_date.present?
-    
-    if availability_date < Time.current
-      errors.add(:availability_date, "cannot be in the past")
-    end
-  end
-
-  def service_provider_can_make_offer
-    return unless service_provider.present?
-    
-    unless service_provider.service_provider?
-      errors.add(:service_provider, "must be a service provider")
-    end
-    
-    unless service_provider.can_provide_services?
-      errors.add(:service_provider, "must be active and verified")
-    end
-  end
-
-  def task_can_receive_offers
-    return unless task.present?
-    
-    unless task.can_receive_offers?
-      errors.add(:task, "is no longer accepting offers")
-    end
-  end
-
-  public
-
-  def can_start_work?
-    accepted? && task.assigned?
-  end
-
-  def can_mark_complete?
-    accepted? && task.in_progress?
-  end
-  
-  def completed?
-    task&.completed?
-  end
-  
   def create_payment!
     return payment if payment.present?
     
@@ -131,11 +49,4 @@ class Offer < ApplicationRecord
     )
   end
 
-  private
-
-  def completion_photos_required
-    if task&.completed? && completion_photos.blank?
-      errors.add(:completion_photos, "are required when marking task as complete")
-    end
-  end
 end
