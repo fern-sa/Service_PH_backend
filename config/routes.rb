@@ -11,13 +11,7 @@ Rails.application.routes.draw do
     passwords: 'users/passwords'
   }
 
-  resources :messages, only: [:create] do
-    collection do
-      get :fetch_log
-      get "user_log", to: "messages#fetch_all_logs_for_user"
-      get "all_logs", to: "messages#fetch_all_logs_in_db"
-    end
-  end
+  
 
   # API routes for Core Business Functionality
   namespace :api do
@@ -40,6 +34,13 @@ Rails.application.routes.draw do
       resources :users, only: [:index] do
         collection do
           get "profile", to: "users#show"
+        end
+      end
+      resources :messages, only: [:create] do
+        collection do
+          get :fetch_log
+          get "user_log", to: "messages#fetch_all_logs_for_user"
+          get "all_logs", to: "messages#fetch_all_logs_in_db"
         end
       end
     end

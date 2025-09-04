@@ -5,15 +5,12 @@ class Api::V1::UsersController < ApplicationController
 
   def index
     render json: { error: "Not authorized" }, status: :unauthorized and return if !current_user.admin?
-    p User.all
     render json: UserSerializer.new(User.all, is_collection: true).serializable_hash, status: :ok
   end
 
   def show
-    unless current_user
-      render json: { error: "Authentication required" }, status: :unauthorized and return
-    end
-
+    render json: { error: "Authentication required" }, status: :unauthorized and return if !current_user
+    
     if target_user_id.present? 
         @user = User.find_by(id: target_user_id)
         return render json: { error: "User not found" }, status: :not_found unless @user
@@ -21,7 +18,6 @@ class Api::V1::UsersController < ApplicationController
         @user = current_user
     end
 
-    # Check if dashboard stats should be included
     include_stats = params[:include_stats] == 'true'
     serializer_params = include_stats ? { include_stats: true } : {}
 
