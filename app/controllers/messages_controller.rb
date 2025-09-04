@@ -4,7 +4,6 @@ class MessagesController < ApplicationController
   before_action :authenticate_user!
   before_action :set_offer, only: [:create, :fetch_log]
 
-
   def create
     render json: { error: "Offer not found" }, status: :not_found and return unless @offer
     render json: { error: "Offer not accepted yet" }, status: :unprocessable_entity and return unless @offer.accepted?
@@ -45,7 +44,6 @@ class MessagesController < ApplicationController
       render json: { offers: logs }, status: :ok
     end
   end
-
 
   private
 
