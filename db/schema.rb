@@ -162,6 +162,7 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_02_104222) do
     t.boolean "verified", default: false
     t.boolean "active", default: true
     t.string "user_type", default: "customer"
+    t.datetime "deleted_at"
     t.index ["active"], name: "index_users_on_active"
     t.index ["city", "province"], name: "index_users_on_city_and_province"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true

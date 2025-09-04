@@ -11,19 +11,6 @@ Rails.application.routes.draw do
     passwords: 'users/passwords'
   }
 
-  devise_scope :user do
-    get 'profile', to: 'users/registrations#show'
-    get 'users/index', to: 'users/registrations#index'
-  end
-
-  resources :messages, only: [:create] do
-    collection do
-      get :fetch_log
-      get "user_log", to: "messages#fetch_all_logs_for_user"
-      get "all_logs", to: "messages#fetch_all_logs_in_db"
-    end
-  end
-
   # API routes for Core Business Functionality
   namespace :api do
     namespace :v1 do
@@ -47,6 +34,18 @@ Rails.application.routes.draw do
               post :stripe_intent
             end
           end
+        end
+      end
+      resources :users, only: [:index] do
+        collection do
+          get "profile", to: "users#show"
+        end
+      end
+      resources :messages, only: [:create] do
+        collection do
+          get :fetch_log
+          get "user_log", to: "messages#fetch_all_logs_for_user"
+          get "all_logs", to: "messages#fetch_all_logs_in_db"
         end
       end
     end
