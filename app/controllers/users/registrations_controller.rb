@@ -4,7 +4,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
   include RackSessionsFix
   include CheckAdminOrCurrentUser
   respond_to :json
-  before_action :authenticate_user!, only: [:destroy, :update, :show, :index]
+  before_action :authenticate_user!, only: [:destroy, :update]
 
   def destroy
     return if !check_if_admin_or_current_user
@@ -13,11 +13,6 @@ class Users::RegistrationsController < Devise::RegistrationsController
     else
       render json: { error: "Not authorized to delete this account." }, status: :unauthorized
     end
-  end
-
-  def index
-    render json: { error: "Not authorized" }, status: :unauthorized and return if !current_user.admin?
-    render json: UserSerializer.new(User.all).serializable_hash, status: :ok
   end
 
   def update
@@ -31,28 +26,6 @@ class Users::RegistrationsController < Devise::RegistrationsController
         details: @user.errors.full_messages
       }, status: :unprocessable_entity
     end
-  end
-
-  def show
-    unless current_user
-      render json: { error: "Authentication required" }, status: :unauthorized and return
-    end
-
-    if target_user_id.present? 
-        @user = User.find_by(id: target_user_id)
-        return render json: { error: "User not found" }, status: :not_found unless @user
-      else
-        @user = current_user
-    end
-
-    # Check if dashboard stats should be included
-    include_stats = params[:include_stats] == 'true'
-    serializer_params = include_stats ? { include_stats: true } : {}
-
-    render json: {
-        status: {code: 200},
-        data: UserSerializer.new(@user, { params: serializer_params }).serializable_hash[:data][:attributes]
-      }
   end
 
   def create
