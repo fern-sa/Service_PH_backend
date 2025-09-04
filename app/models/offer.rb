@@ -1,7 +1,9 @@
 class Offer < ApplicationRecord
   belongs_to :task
   belongs_to :service_provider, class_name: 'User'
-  has_many :messages, dependent: :destroy 
+  has_one :payment, dependent: :destroy
+  has_many :messages, dependent: :destroy
+  has_many_attached :completion_photos
 
   enum status: {
     pending: 'pending',
@@ -12,9 +14,11 @@ class Offer < ApplicationRecord
   validates :price, presence: true, numericality: { greater_than: 0 }
   validates :message, presence: true, length: { minimum: 10, maximum: 500 }
   validates :availability_date, presence: true
+  validates :payment_method, inclusion: { in: %w[cash online] }
   validate :availability_date_not_in_past
   validate :service_provider_can_make_offer, on: :create
   validate :task_can_receive_offers, on: :create
+  validate :completion_photos_required, if: :completed?
   validates :service_provider_id, uniqueness: { 
     scope: :task_id, 
     message: "can only make one offer per task" 
@@ -102,11 +106,36 @@ class Offer < ApplicationRecord
     end
   end
 
+  public
+
   def can_start_work?
     accepted? && task.assigned?
   end
 
   def can_mark_complete?
     accepted? && task.in_progress?
+  end
+  
+  def completed?
+    task&.completed?
+  end
+  
+  def create_payment!
+    return payment if payment.present?
+    
+    Payment.create!(
+      task: task,
+      offer: self,
+      amount: price,
+      payment_method: payment_method
+    )
+  end
+
+  private
+
+  def completion_photos_required
+    if task&.completed? && completion_photos.blank?
+      errors.add(:completion_photos, "are required when marking task as complete")
+    end
   end
 end

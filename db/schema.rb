@@ -10,7 +10,8 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.2].define(version: 2025_09_03_122337) do
+
+ActiveRecord::Schema[7.2].define(version: 2025_09_02_104222) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -80,11 +81,25 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_03_122337) do
     t.datetime "updated_at", null: false
     t.text "completion_notes"
     t.datetime "completed_at"
+    t.string "payment_method", default: "cash"
     t.index ["availability_date"], name: "index_offers_on_availability_date"
     t.index ["service_provider_id"], name: "index_offers_on_service_provider_id"
     t.index ["status"], name: "index_offers_on_status"
     t.index ["task_id", "service_provider_id"], name: "index_offers_on_task_id_and_service_provider_id", unique: true
     t.index ["task_id"], name: "index_offers_on_task_id"
+  end
+
+  create_table "payments", force: :cascade do |t|
+    t.bigint "task_id", null: false
+    t.bigint "offer_id", null: false
+    t.decimal "amount", precision: 10, scale: 2, null: false
+    t.string "payment_method", default: "cash"
+    t.string "status", default: "pending"
+    t.string "stripe_payment_intent_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["offer_id"], name: "index_payments_on_offer_id"
+    t.index ["task_id"], name: "index_payments_on_task_id"
   end
 
   create_table "tasks", force: :cascade do |t|
@@ -167,6 +182,8 @@ ActiveRecord::Schema[7.2].define(version: 2025_09_03_122337) do
   add_foreign_key "messages", "users", column: "sender_id"
   add_foreign_key "offers", "tasks"
   add_foreign_key "offers", "users", column: "service_provider_id"
+  add_foreign_key "payments", "offers"
+  add_foreign_key "payments", "tasks"
   add_foreign_key "tasks", "categories"
   add_foreign_key "tasks", "users"
 end
