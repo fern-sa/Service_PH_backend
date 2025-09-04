@@ -1,15 +1,5 @@
 Rails.application.routes.draw do
-  devise_for :users, path: '', path_names: {
-    sign_in: 'login',
-    sign_out: 'logout',
-    registration: 'signup'
-  },
-  controllers: {
-    sessions: 'users/sessions',
-    registrations: 'users/registrations',
-    confirmations: 'users/confirmations',
-    passwords: 'users/passwords'
-  }
+  
 
   
 
@@ -43,6 +33,18 @@ Rails.application.routes.draw do
           get "all_logs", to: "messages#fetch_all_logs_in_db"
         end
       end
+
+      devise_for :users, path: '', path_names: {
+        sign_in: 'login',
+        sign_out: 'logout',
+        registration: 'signup'
+      },
+      controllers: {
+        sessions: 'api/v1/users/sessions',
+        registrations: 'api/v1/users/registrations',
+        confirmations: 'api/v1/users/confirmations',
+        passwords: 'api/v1/users/passwords'
+      }
     end
   end
 
