@@ -1,4 +1,4 @@
-class MessagesController < ApplicationController
+class Api::V1::MessagesController < ApplicationController
   include CheckAdminOrCurrentUser
   respond_to :json
   before_action :authenticate_user!
