@@ -31,7 +31,7 @@ class Api::V1::Users::RegistrationsController < Devise::RegistrationsController
 
   def create
     if params.dig(:user, :user_type) == "admin"
-      return render json: { error: "You cannot sign up as an admin." }, status: :forbidden
+      render json: { error: "You cannot sign up as an admin." }, status: :forbidden and return
     end
 
     build_resource(sign_up_params)
