@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
-class Users::RegistrationsController < Devise::RegistrationsController
+class Api::V1::Users::RegistrationsController < Devise::RegistrationsController
   include RackSessionsFix
+  include SetDeviseMapping
   include CheckAdminOrCurrentUser
   respond_to :json
   before_action :authenticate_user!, only: [:destroy, :update]
