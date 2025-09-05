@@ -16,7 +16,7 @@ class Tasks::SearchService < ApplicationService
   attr_reader :params
 
   def base_query
-    Task.includes(:category, :user).available
+    Task.includes(:category, :user).all
   end
 
   def apply_filters(tasks)
