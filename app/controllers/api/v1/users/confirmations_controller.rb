@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-class Users::ConfirmationsController < Devise::ConfirmationsController
+class Api::V1::Users::ConfirmationsController < Devise::ConfirmationsController
+  include SetDeviseMapping
   # GET /resource/confirmation?confirmation_token=abcdef
   def show
     self.resource = resource_class.confirm_by_token(params[:confirmation_token])

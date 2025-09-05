@@ -1,14 +1,14 @@
 Rails.application.routes.draw do
-  devise_for :users, path: '', path_names: {
+  devise_for :users, path: 'api/v1', path_names: {
     sign_in: 'login',
     sign_out: 'logout',
     registration: 'signup'
   },
   controllers: {
-    sessions: 'users/sessions',
-    registrations: 'users/registrations',
-    confirmations: 'users/confirmations',
-    passwords: 'users/passwords'
+    sessions: 'api/v1/users/sessions',
+    registrations: 'api/v1/users/registrations',
+    confirmations: 'api/v1/users/confirmations',
+    passwords: 'api/v1/users/passwords'
   }
 
   # API routes for Core Business Functionality

@@ -13,7 +13,7 @@ class Api::V1::UsersController < ApplicationController
     
     if target_user_id.present? 
         @user = User.find_by(id: target_user_id)
-        return render json: { error: "User not found" }, status: :not_found unless @user
+        render json: { error: "User not found" }, status: :not_found and return unless @user
       else
         @user = current_user
     end

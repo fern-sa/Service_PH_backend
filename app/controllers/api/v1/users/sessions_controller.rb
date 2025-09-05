@@ -1,8 +1,16 @@
 # frozen_string_literal: true
 
-class Users::SessionsController < Devise::SessionsController
+class Api::V1::Users::SessionsController < Devise::SessionsController
+  include SetDeviseMapping
   include RackSessionsFix
   respond_to :json
+
+  def create
+    user = warden.authenticate!(auth_options)
+    sign_in(:user, user)
+    yield user if block_given?
+    respond_with(user)
+  end
 
   private
 
