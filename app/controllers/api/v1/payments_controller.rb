@@ -35,7 +35,7 @@ class Api::V1::PaymentsController < ApplicationController
   end
 
   def stripe_intent
-    result = Payments::StripeService.call(offer: @offer, user: current_user)
+    result = Payments::StripeService.call(offer: @offer, customer: current_user)
     
     if result.success?
       render_success(

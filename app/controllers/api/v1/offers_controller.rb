@@ -6,9 +6,9 @@ class Api::V1::OffersController < ApplicationController
   include Authorization
   
   before_action :authenticate_user!
-  before_action :set_task
+  before_action :set_task, except: [:my_offers]
   before_action :set_offer, only: [:show, :accept, :reject, :confirm_cash_payment]
-  before_action :authorize_service_provider, only: [:create]
+  before_action :authorize_service_provider, only: [:create, :my_offers]
   before_action :authorize_task_owner, only: [:index, :accept, :reject, :confirm_cash_payment]
   before_action :authorize_offer_access, only: [:show]
 
@@ -23,6 +23,14 @@ class Api::V1::OffersController < ApplicationController
 
   def show
     render_success(data: serialized_offer(@offer))
+  end
+
+  def my_offers
+    offers = current_user.offers.includes({ task: :user }, :service_provider, :payment)
+    
+    render_success(data: {
+      offers: serialized_offers(offers)
+    })
   end
 
   def create
