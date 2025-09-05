@@ -28,9 +28,9 @@ class Api::V1::MessagesController < ApplicationController
   end
 
   def fetch_all_logs_for_user
-    return if !check_if_admin_or_current_user
+    return if !check_if_admin_or_current_user(current_user)
     set_offers
-    render json: { error: "No accepted offers with message logs found for this user" }, status: :not_found and return if @offers.empty?
+    return render json: { error: "No accepted offers with message logs found for this user" }, status: :not_found if @offers.empty?
     render json: { offers: @offers.map(&:as_log) }, status: :ok
   end
 
@@ -60,7 +60,7 @@ class Api::V1::MessagesController < ApplicationController
   end
 
   def set_offers
-    @offers = Offer.accepted.for_user(@user.id).includes(:task, :messages)
+    @offers = Offer.accepted.for_user(@user&.id).includes(:task, :messages)
   end
 
   def set_customer_and_service_provider

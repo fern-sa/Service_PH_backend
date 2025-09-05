@@ -8,9 +8,9 @@ module SetDeviseMapping
   def set_devise_mapping
     Rails.logger.info "Running in #{controller_name}##{action_name}"
 
-    Devise.mappings[:user] = Devise.mappings[:api_v1_user]
+    # Devise.mappings[:user] = Devise.mappings[:api_v1_user]
     request.env['devise.mapping'] = Devise.mappings[:user]
-    warden.config[:default_strategies][:user] =  warden.config[:default_strategies].delete(:api_v1_user)
+    # warden.config[:default_strategies][:user] =  warden.config[:default_strategies].delete(:api_v1_user)
   end
 
 end

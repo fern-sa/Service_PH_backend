@@ -8,8 +8,6 @@ class Api::V1::Users::SessionsController < Devise::SessionsController
 
   def create
     request.env['devise.mapping'] = Devise.mappings[:user]
-    p warden.config[:default_strategies][:user]
-    p auth_options
     user = warden.authenticate!(auth_options)
     sign_in(:user, user)
     yield user if block_given?
