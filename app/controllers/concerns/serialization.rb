@@ -18,6 +18,19 @@ module Serialization
         name: offer.service_provider.full_name,
         email: offer.service_provider.email
       },
+      task: offer.task ? {
+        id: offer.task.id,
+        title: offer.task.title,
+        description: offer.task.description,
+        status: offer.task.status,
+        location: offer.task.location,
+        budget_range: offer.task.budget_range,
+        user: {
+          id: offer.task.user.id,
+          first_name: offer.task.user.first_name,
+          last_name: offer.task.user.last_name
+        }
+      } : nil,
       payment: offer.payment ? {
         id: offer.payment.id,
         status: offer.payment.status,
