@@ -1,13 +1,11 @@
 # frozen_string_literal: true
 
 class Api::V1::Users::SessionsController < Devise::SessionsController
-  # include SetDeviseMapping
+  include SetDeviseMapping
   include RackSessionsFix
   respond_to :json
-  skip_before_action :set_devise_mapping, raise: false, only: :create
 
   def create
-    request.env['devise.mapping'] = Devise.mappings[:user]
     user = warden.authenticate!(auth_options)
     sign_in(:user, user)
     yield user if block_given?
