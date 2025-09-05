@@ -48,7 +48,8 @@ class User < ApplicationRecord
       deleted_at: Time.current,
       first_name: "Deleted",
       last_name: "User",
-      email: scrubbed_email
+      email: scrubbed_email,
+      phone: scrubbed_phone
     )
   end
 
@@ -74,6 +75,13 @@ class User < ApplicationRecord
 
   def scrubbed_email
     "deleted_user_#{id}@deleted.com"
+  end
+
+  def scrubbed_phone
+    loop do
+      candidate = "+63%010d" % SecureRandom.random_number(10_000_000_000)
+      break candidate unless self.class.exists?(phone: candidate)
+    end
   end
 
   def prevent_admin_signup
