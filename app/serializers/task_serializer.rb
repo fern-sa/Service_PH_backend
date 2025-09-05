@@ -8,6 +8,11 @@ class TaskSerializer
     task.budget_range
   end
 
+  # Include assigned_offer_id if present
+  attribute :assigned_offer_id do |task| 
+    task.assigned_offer.id if task.assigned_service_provider.present? 
+  end
+
   # Include category information
   attribute :category do |task|
     {
