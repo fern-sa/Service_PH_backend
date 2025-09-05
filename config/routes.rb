@@ -15,6 +15,10 @@ Rails.application.routes.draw do
   namespace :api do
     namespace :v1 do
       resources :categories, only: [:index, :show]
+      
+      # Service Provider Offers endpoint
+      get 'my_offers', to: 'offers#my_offers'
+      
       resources :tasks do
         member do
           patch :start_work
