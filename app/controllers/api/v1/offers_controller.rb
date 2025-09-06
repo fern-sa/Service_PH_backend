@@ -9,7 +9,8 @@ class Api::V1::OffersController < ApplicationController
   before_action :set_task, except: [:my_offers]
   before_action :set_offer, only: [:show, :accept, :reject, :confirm_cash_payment]
   before_action :authorize_service_provider, only: [:create, :my_offers]
-  before_action :authorize_task_owner, only: [:index, :accept, :reject, :confirm_cash_payment]
+  before_action :authorize_task_owner, only: [:index, :accept, :reject]
+  before_action :authorize_offer_service_provider, only: [:confirm_cash_payment]
   before_action :authorize_offer_access, only: [:show]
 
   def index
@@ -105,6 +106,12 @@ class Api::V1::OffersController < ApplicationController
     offer = @task.offers.build(offer_params)
     offer.service_provider = current_user
     offer
+  end
+
+  def authorize_offer_service_provider
+    unless current_user == @offer.service_provider
+      render_error(message: 'Only the service provider can confirm this payment', status: :forbidden)
+    end
   end
 
 end
