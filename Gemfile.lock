@@ -123,7 +123,7 @@ GEM
       zeitwerk (~> 2.6)
     erb (5.0.2)
     erubi (1.13.1)
-    geocoder (1.8.5)
+    geocoder (1.8.6)
       base64 (>= 0.1.0)
       csv (>= 3.0.0)
     globalid (1.2.1)
